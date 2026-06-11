@@ -1,0 +1,8 @@
+Options -Indexes
+DirectoryIndex index.html
+
+# CORS – iframe beágyazás engedélyezése bármely domainről
+<IfModule mod_headers.c>
+    Header set X-Frame-Options "ALLOWALL"
+    Header set Access-Control-Allow-Origin "*"
+</IfModule>

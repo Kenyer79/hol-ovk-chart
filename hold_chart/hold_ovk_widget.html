@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HOLD OVK Hozamok – okosdontes.hu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --orange:    #E87722;
+    --orange-lt: #FDF0E6;
+    --orange-md: #F9D4B0;
+    --blue:      #2563EB;
+    --green:     #16A34A;
+    --gold:      #D97706;
+    --gray-50:   #F8F9FA;
+    --gray-100:  #F1F3F5;
+    --gray-200:  #E9ECEF;
+    --gray-400:  #ADB5BD;
+    --gray-600:  #6C757D;
+    --gray-800:  #343A40;
+    --gray-900:  #212529;
+    --radius:    10px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+    --shadow-md: 0 4px 16px rgba(0,0,0,.10);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #fff;
+    color: var(--gray-900);
+    padding: 20px;
+    min-height: 100vh;
+  }
+
+  .widget {
+    max-width: 820px;
+    margin: 0 auto;
+  }
+
+  /* ── Header ── */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+  }
+  .header-brand {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 4px;
+  }
+  .header-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gray-900);
+  }
+  .header-meta {
+    text-align: right;
+    font-size: 10px;
+    color: var(--gray-400);
+    line-height: 1.7;
+  }
+
+  /* ── Disclaimer ── */
+  .disclaimer {
+    font-size: 11px;
+    color: var(--gray-600);
+    border-left: 3px solid var(--orange);
+    padding: 6px 10px;
+    background: var(--orange-lt);
+    border-radius: 0 6px 6px 0;
+    margin-bottom: 18px;
+    line-height: 1.5;
+  }
+
+  /* ── KPI kártyák ── */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .kpi-card {
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s, opacity .15s;
+    user-select: none;
+    background: #fff;
+  }
+  .kpi-card.active { background: var(--gray-50); }
+  .kpi-card.inactive { opacity: .45; }
+  .kpi-card:hover { box-shadow: var(--shadow-sm); }
+  .kpi-card[data-series="dinamikus"].active  { border-color: var(--orange); }
+  .kpi-card[data-series="kiegyen"].active    { border-color: var(--blue); }
+  .kpi-card[data-series="megfontolt"].active { border-color: var(--green); }
+
+  .kpi-top {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 7px;
+  }
+  .kpi-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .kpi-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-800);
+  }
+  .kpi-value {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 2px;
+  }
+  .kpi-card[data-series="dinamikus"]  .kpi-value { color: var(--orange); }
+  .kpi-card[data-series="kiegyen"]    .kpi-value { color: var(--blue); }
+  .kpi-card[data-series="megfontolt"] .kpi-value { color: var(--green); }
+  .kpi-label {
+    font-size: 10px;
+    color: var(--gray-400);
+    margin-bottom: 5px;
+  }
+  .kpi-desc {
+    font-size: 10px;
+    color: var(--gray-600);
+  }
+
+  /* ── Toolbar ── */
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .period-btns {
+    display: flex;
+    background: var(--gray-100);
+    border-radius: 8px;
+    padding: 3px;
+    gap: 2px;
+  }
+  .period-btn {
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: background .12s, color .12s, font-weight .12s;
+  }
+  .period-btn.active {
+    background: #fff;
+    color: var(--orange);
+    font-weight: 700;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .pmap-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 7px;
+    padding: 5px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .pmap-btn.active {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: #FFFBEB;
+  }
+  .pmap-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--gold);
+  }
+
+  /* ── Chart container ── */
+  .chart-wrap {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 16px 12px 10px;
+    margin-bottom: 14px;
+    position: relative;
+  }
+  .chart-canvas-wrap {
+    position: relative;
+    height: 260px;
+  }
+  .chart-note {
+    text-align: center;
+    font-size: 10px;
+    color: var(--gray-400);
+    margin-top: 8px;
+  }
+
+
+</style>
+</head>
+<body>
+<div class="widget">
+
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <div class="header-brand">HOLD Online Vagyonkezelés</div>
+      <div class="header-title">Portfólió hozamok</div>
+    </div>
+    <div class="header-meta">
+      Forrás: BAMOSZ.hu<br>
+      <span id="lastUpdate">Frissítve: 2026. június 9.</span>
+    </div>
+  </div>
+
+  <!-- Disclaimer -->
+  <div class="disclaimer">
+    A múltbeli hozam nem jelent garanciát a jövőbeli teljesítményre. Az adatok tájékoztató jellegűek, forrás: BAMOSZ.hu
+  </div>
+
+  <!-- KPI kártyák -->
+  <div class="kpi-row">
+    <div class="kpi-card active" data-series="dinamikus" onclick="toggleSeries('dinamikus')">
+      <div class="kpi-top">
+        <span class="kpi-dot" style="background:#E87722"></span>
+        <span class="kpi-name">Dinamikus</span>
+      </div>
+      <div class="kpi-value" id="kpi-3y-dinamikus">—</div>
+      <div class="kpi-label" id="kpi-label-dinamikus">3 éves hozam</div>
+      <div class="kpi-desc">Min. 50% kockázatos eszköz</div>
+    </div>
+    <div class="kpi-card active" data-series="kiegyen" onclick="toggleSeries('kiegyen')">
+      <div class="kpi-top">
+        <span class="kpi-dot" style="background:#2563EB"></span>
+        <span class="kpi-name">Kiegyensúlyozott</span>
+      </div>
+      <div class="kpi-value" id="kpi-3y-kiegyen">—</div>
+      <div class="kpi-label" id="kpi-label-kiegyen">3 éves hozam</div>
+      <div class="kpi-desc">Vegyes kockázati profil</div>
+    </div>
+    <div class="kpi-card active" data-series="megfontolt" onclick="toggleSeries('megfontolt')">
+      <div class="kpi-top">
+        <span class="kpi-dot" style="background:#16A34A"></span>
+        <span class="kpi-name">Megfontolt</span>
+      </div>
+      <div class="kpi-value" id="kpi-3y-megfontolt">—</div>
+      <div class="kpi-label" id="kpi-label-megfontolt">3 éves hozam</div>
+      <div class="kpi-desc">Alacsonyabb kockázat</div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="period-btns">
+      <button class="period-btn" data-months="3"   onclick="setPeriod(this)">3 hó</button>
+      <button class="period-btn" data-months="6"   onclick="setPeriod(this)">6 hó</button>
+      <button class="period-btn" data-months="12"  onclick="setPeriod(this)">1 év</button>
+      <button class="period-btn" data-months="24"  onclick="setPeriod(this)">2 év</button>
+      <button class="period-btn active" data-months="36" onclick="setPeriod(this)">3 év</button>
+      <button class="period-btn" data-months="9999" onclick="setPeriod(this)">Teljes</button>
+    </div>
+    <button class="pmap-btn" id="pmapBtn" onclick="togglePmap()">
+      <span class="pmap-dot"></span>
+      PMÁP összehasonlítás
+    </button>
+  </div>
+
+  <!-- Chart -->
+  <div class="chart-wrap">
+    <div class="chart-canvas-wrap">
+      <canvas id="myChart"></canvas>
+    </div>
+    <div class="chart-note">Kumulált hozam az időszak elejéhez viszonyítva</div>
+  </div>
+
+
+
+</div><!-- /widget -->
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  ADATOK  –  forrás: BAMOSZ.hu
+//  VK 300 Dinamikus: ISIN HU0000727771  (valós adatok)
+//  VK 200 Kiegyensúlyozott: ISIN kiegészítendő (arányos becslés)
+//  VK 100 Megfontolt: ISIN kiegészítendő (arányos becslés)
+//  PMÁP: közelítő referencia
+// ═══════════════════════════════════════════════════════════════
+
+// Havi adatpontok – [dátum, normalizált árfolyam (indulás=1.0)]
+// Dinamikus (VK 300) – valós BAMOSZ adatok alapján
+const DIN_RAW = [
+  ["2021-08-31",1.0],
+  ["2021-09-30",1.006],
+  ["2021-10-29",1.02],
+  ["2021-11-30",1.033],
+  ["2021-12-31",1.052],
+  ["2022-01-31",1.063],
+  ["2022-02-28",1.074],
+  ["2022-03-31",1.091],
+  ["2022-04-29",1.104],
+  ["2022-05-31",1.116],
+  ["2022-06-30",1.101],
+  ["2022-07-29",1.122],
+  ["2022-08-31",1.131],
+  ["2022-09-30",1.143],
+  ["2022-10-31",1.162],
+  ["2022-11-30",1.177],
+  ["2022-12-30",1.193],
+  ["2023-01-31",1.214],
+  ["2023-02-28",1.228],
+  ["2023-03-31",1.245],
+  ["2023-04-28",1.261],
+  ["2023-05-31",1.276],
+  ["2023-06-30",1.298],
+  ["2023-07-31",1.322],
+  ["2023-08-31",1.339],
+  ["2023-09-29",1.354],
+  ["2023-10-31",1.369],
+  ["2023-11-30",1.392],
+  ["2023-12-29",1.415],
+  ["2024-01-31",1.437],
+  ["2024-02-29",1.465],
+  ["2024-03-28",1.487],
+  ["2024-04-30",1.508],
+  ["2024-05-31",1.527],
+  ["2024-06-28",1.543],
+  ["2024-07-31",1.558],
+  ["2024-08-30",1.578],
+  ["2024-09-30",1.599],
+  ["2024-10-31",1.612],
+  ["2024-11-29",1.634],
+  ["2024-12-31",1.65],
+  ["2025-01-31",1.67],
+  ["2025-02-28",1.691],
+  ["2025-03-31",1.712],
+  ["2025-04-30",1.736],
+  ["2025-05-30",1.762],
+  ["2025-06-30",1.777],
+  ["2025-07-31",1.79],
+  ["2025-08-29",1.8],
+  ["2025-09-30",1.816],
+  ["2025-10-31",1.835],
+  ["2025-11-28",1.854],
+  ["2025-12-31",1.87],
+  ["2026-01-30",1.898],
+  ["2026-02-27",1.93],
+  ["2026-03-31",1.949],
+  ["2026-04-30",1.972],
+  ["2026-05-29",1.997],
+  ["2026-06-09",1.989515]
+];
+
+// Kiegyensúlyozott = ~76%-os kitettség a Dinamikushoz képest
+const KIE_RAW = DIN_RAW.map(([d,v]) => [d, 1 + (v-1)*0.76]);
+
+// Megfontolt = ~52%-os kitettség
+const MEG_RAW = DIN_RAW.map(([d,v]) => [d, 1 + (v-1)*0.52]);
+
+// PMÁP közelítő (~8.5% p.a. kumulált)
+const PMAP_RAW = DIN_RAW.map(([d,v], i) => {
+  const years = i / (DIN_RAW.length - 1) * 4.8;
+  return [d, Math.pow(1.085, years)];
+});
+
+// ── Segédfüggvények ─────────────────────────────────────────────
+function parseDate(s) { return new Date(s); }
+
+function formatLabel(s) {
+  const d = new Date(s);
+  return d.toLocaleDateString('hu-HU', { year:'2-digit', month:'short' });
+}
+
+function normalizeSeries(raw, months) {
+  const lastDate = new Date(raw[raw.length - 1][0]);
+  const cutoff   = new Date(lastDate);
+  if (months < 9999) cutoff.setMonth(cutoff.getMonth() - months);
+  else cutoff.setFullYear(2000);
+
+  const filtered = raw.filter(r => new Date(r[0]) >= cutoff);
+  if (!filtered.length) return [];
+  const base = filtered[0][1];
+  return filtered.map(([d, v]) => ({
+    x: formatLabel(d),
+    y: parseFloat(((v / base - 1) * 100).toFixed(2))
+  }));
+}
+
+function calcReturn(raw, months) {
+  const lastDate = new Date(raw[raw.length-1][0]);
+  const cutoff   = new Date(lastDate);
+  if (months < 9999) cutoff.setMonth(cutoff.getMonth() - months);
+  else cutoff.setFullYear(2000);
+  const from = raw.find(r => new Date(r[0]) >= cutoff);
+  if (!from) return null;
+  return ((raw[raw.length-1][1] / from[1] - 1) * 100).toFixed(1);
+}
+
+function calc3yReturn(raw) {
+  return calcReturn(raw, 36);
+}
+
+// ── State ────────────────────────────────────────────────────────
+const state = {
+  months:   36,
+  active:   { dinamikus: true, kiegyen: true, megfontolt: true },
+  showPmap: false
+};
+
+// ── Chart.js setup ───────────────────────────────────────────────
+const ctx = document.getElementById('myChart').getContext('2d');
+
+const COLORS = {
+  dinamikus:  '#E87722',
+  kiegyen:    '#2563EB',
+  megfontolt: '#16A34A',
+  pmap:       '#D97706'
+};
+
+function buildDatasets() {
+  const ds = [];
+  if (state.active.dinamikus) ds.push({
+    label: 'Dinamikus',
+    data:  normalizeSeries(DIN_RAW, state.months),
+    borderColor: COLORS.dinamikus,
+    backgroundColor: 'transparent',
+    borderWidth: 2.5,
+    pointRadius: 0,
+    pointHoverRadius: 0,
+    tension: 0.4
+  });
+  if (state.active.kiegyen) ds.push({
+    label: 'Kiegyensúlyozott',
+    data:  normalizeSeries(KIE_RAW, state.months),
+    borderColor: COLORS.kiegyen,
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    pointRadius: 0,
+    pointHoverRadius: 0,
+    tension: 0.4
+  });
+  if (state.active.megfontolt) ds.push({
+    label: 'Megfontolt',
+    data:  normalizeSeries(MEG_RAW, state.months),
+    borderColor: COLORS.megfontolt,
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    pointRadius: 0,
+    pointHoverRadius: 0,
+    tension: 0.4
+  });
+  if (state.showPmap) ds.push({
+    label: 'PMÁP (ref.)',
+    data:  normalizeSeries(PMAP_RAW, state.months),
+    borderColor: COLORS.pmap,
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderDash: [6, 4],
+    pointRadius: 0,
+    pointHoverRadius: 0,
+    tension: 0.4
+  });
+  return ds;
+}
+
+const myChart = new Chart(ctx, {
+  type: 'line',
+  data: { datasets: buildDatasets() },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#fff',
+        borderColor: '#e9ecef',
+        borderWidth: 1,
+        titleColor: '#6c757d',
+        bodyColor: '#212529',
+        padding: 12,
+        callbacks: {
+          label: ctx => {
+            const v = ctx.parsed.y;
+            return `  ${ctx.dataset.label}: ${v >= 0 ? '+' : ''}${v.toFixed(1)}%`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        type: 'category',
+        ticks: {
+          color: '#adb5bd',
+          font: { size: 10, family: 'DM Sans' },
+          maxTicksLimit: 10,
+          maxRotation: 0,
+        },
+        grid: { color: 'rgba(0,0,0,.04)' },
+        border: { color: 'rgba(0,0,0,.08)' }
+      },
+      y: {
+        ticks: {
+          color: '#adb5bd',
+          font: { size: 10, family: 'DM Mono' },
+          callback: v => (v >= 0 ? '+' : '') + v.toFixed(0) + '%'
+        },
+        grid: { color: 'rgba(0,0,0,.04)' },
+        border: { color: 'transparent' }
+      }
+    }
+  }
+});
+
+// ── Frissítő függvény ─────────────────────────────────────────────
+function refresh() {
+  myChart.data.datasets = buildDatasets();
+  myChart.update('active');
+}
+
+// ── Interakciók ────────────────────────────────────────────────────
+function toggleSeries(key) {
+  state.active[key] = !state.active[key];
+  const card = document.querySelector(`.kpi-card[data-series="${key}"]`);
+  card.classList.toggle('active',   state.active[key]);
+  card.classList.toggle('inactive', !state.active[key]);
+  refresh();
+}
+
+function setPeriod(btn) {
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.months = parseInt(btn.dataset.months);
+  refresh();
+  updateKpi();
+}
+
+function togglePmap() {
+  state.showPmap = !state.showPmap;
+  document.getElementById('pmapBtn').classList.toggle('active', state.showPmap);
+  refresh();
+}
+
+// ── KPI felirat az időszakhoz ─────────────────────────────────────
+const PERIOD_LABELS = {
+  3: '3 havi hozam', 6: '6 havi hozam', 12: '1 éves hozam',
+  24: '2 éves hozam', 36: '3 éves hozam', 9999: 'Teljes hozam'
+};
+
+function updateKpi() {
+  const m   = state.months;
+  const lbl = PERIOD_LABELS[m] || `${m} havi hozam`;
+
+  const din = calcReturn(DIN_RAW, m);
+  const kie = calcReturn(KIE_RAW, m);
+  const meg = calcReturn(MEG_RAW, m);
+
+  document.getElementById('kpi-3y-dinamikus').textContent  = din ? (din > 0 ? '+' : '') + din + '%' : 'N/A';
+  document.getElementById('kpi-3y-kiegyen').textContent    = kie ? (kie > 0 ? '+' : '') + kie + '%' : 'N/A';
+  document.getElementById('kpi-3y-megfontolt').textContent = meg ? (meg > 0 ? '+' : '') + meg + '%' : 'N/A';
+
+  ['dinamikus','kiegyen','megfontolt'].forEach(k =>
+    document.getElementById(`kpi-label-${k}`).textContent = lbl
+  );
+}
+
+// ── KPI értékek kitöltése ──────────────────────────────────────────
+function fillKpi() {
+  // A frissítési dátumot a Python update_widget.py írja be statikusan.
+  // Fallback: ha még nincs beírva, az utolsó adatpontból számítja.
+  if (document.getElementById('lastUpdate').textContent === 'Frissítve: —') {
+    const last = DIN_RAW[DIN_RAW.length-1][0];
+    document.getElementById('lastUpdate').textContent =
+      'Frissítve: ' + new Date(last).toLocaleDateString('hu-HU', {year:'numeric', month:'long', day:'numeric'});
+  }
+  updateKpi();
+}
+
+fillKpi();
+</script>
+</body>
+</html>
