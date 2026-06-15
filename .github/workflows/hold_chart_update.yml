@@ -2,11 +2,11 @@ name: HOLD OVK Chart Auto Update
 
 on:
   schedule:
-    # Futtatás naponta reggel 8:15-kor budapesti idő szerint (CET = UTC+1, CEST = UTC+2)
-    # Télen (CET): 07:15 UTC -> '15 7 * * *'
-    # Nyáron (CEST): 06:15 UTC -> '15 6 * * *'
-    # A 06:15 UTC jó középút, nyáron 8:15-kor, télen 7:15-kor fut le (ami a BAMOSZ frissülés miatt tökéletes)
-    - cron: '15 6 * * *'
+    # Futtatás naponta délután 15:15-kor budapesti idő szerint (CET = UTC+1, CEST = UTC+2)
+    # Télen (CET): 14:15 UTC -> '15 14 * * *'
+    # Nyáron (CEST): 13:15 UTC -> '15 13 * * *'
+    # A 13:15 UTC jó középút, nyáron 15:15-kor, télen 14:15-kor fut le (amikor a BAMOSZ adatok már garantáltan frissültek)
+    - cron: '15 13 * * *'
   workflow_dispatch: # Lehetővé teszi a manuális indítást a GitHub felületéről
 
 permissions:
